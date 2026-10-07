@@ -4,7 +4,6 @@ import { start } from "workflow/api";
 import { chat } from "@/workflow/agent-chat";
 
 export async function POST(request: Request) {
-  "use workflow"
   const { messages }: { messages: UIMessage[] } = await request.json();
   const run = await start(chat, [messages]);
 
