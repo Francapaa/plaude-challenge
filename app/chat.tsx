@@ -2,7 +2,11 @@
 
 import { useChat } from "@ai-sdk/react";
 import { WorkflowChatTransport } from "@ai-sdk/workflow/client";
+import { getToolName, isToolUIPart } from "ai";
 import { useMemo, useState } from "react";
+import { ApprovalCard } from "./approval-card";
+
+const APPROVAL_TOOLS = new Set(["refundPayment", "highValueTransfer"]);
 
 export function Chat() {
   const transport = useMemo(
@@ -21,11 +25,32 @@ export function Chat() {
           </p>
         )}
         {messages.map((m) => (
-          <div key={m.id} className="text-sm">
-            <span className="font-medium">{m.role}:</span>{" "}
-            {m.parts
-              ?.map((p) => (p.type === "text" ? p.text : ""))
-              .join("")}
+          <div key={m.id} className="flex flex-col gap-2 text-sm">
+            {m.role !== "user" ? null : (
+              <p>
+                <span className="font-medium">user:</span>{" "}
+                {m.parts
+                  ?.map((p) => (p.type === "text" ? p.text : ""))
+                  .join("")}
+              </p>
+            )}
+            {m.parts?.map((part, i) => {
+              if (part.type === "text" && m.role !== "user") {
+                return <p key={i}>{part.text}</p>;
+              }
+              if (isToolUIPart(part) && APPROVAL_TOOLS.has(getToolName(part))) {
+                return (
+                  <ApprovalCard
+                    key={part.toolCallId}
+                    toolCallId={part.toolCallId}
+                    toolName={getToolName(part)}
+                    input={part.input}
+                    output={part.output}
+                  />
+                );
+              }
+              return null;
+            })}
           </div>
         ))}
       </div>
