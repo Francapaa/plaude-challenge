@@ -80,8 +80,14 @@ async function escalateForApproval(params: {
 
   // Workflow pauses here — no compute consumed — until a human resolves
   // the same token from Slack or from the UI fallback.
+  console.log(
+    `[hitl] awaiting approval tool=${params.toolName} toolCallId=${params.toolCallId}`,
+  );
   const hook = approvalHook.create({ token: params.toolCallId });
   const decision = await hook;
+  console.log(
+    `[hitl] decision tool=${params.toolName} toolCallId=${params.toolCallId} approved=${decision.approved} by=${decision.comment ?? "?"}`,
+  );
 
   await updateApprovalMessageStep({
     channel: posted.channel,
