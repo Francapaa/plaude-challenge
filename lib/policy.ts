@@ -4,18 +4,11 @@
  * `needsApproval` callbacks and Slack message builders.
  */
 
+import type { ActionInput } from "@/types";
+
 export const REFUND_AUTO_APPROVE_MAX_USD = 20;
 export const REFUND_WINDOW_DAYS = 30;
 export const HIGH_VALUE_THRESHOLD_USD = 1000;
-
-export type ActionType = "refund" | "transfer" | "generic";
-
-export interface ActionInput {
-  type: ActionType;
-  amountUSD?: number;
-  daysSincePurchase?: number;
-  hasAllDetails?: boolean;
-}
 
 export function requiresHumanApproval(action: ActionInput): boolean {
   // Ambiguous requests always escalate: never guess.
