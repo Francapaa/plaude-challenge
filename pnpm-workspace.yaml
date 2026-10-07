@@ -1,0 +1,5 @@
+allowBuilds:
+  '@swc/core': false
+  cbor-extract: false
+  esbuild: false
+  unrs-resolver: false
