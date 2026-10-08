@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import type { SlackActionValue } from "@/types";
-import { approvalHook } from "@/workflow/hooks/approval";
+import { getHookByToken, resumeHook } from "workflow/api";
+import { HookNotFoundError } from "workflow/errors";
+import type { ApprovalPayload, SlackActionValue } from "@/types";
+import { approvalPayloadSchema } from "@/workflow/hooks/approval";
 import {
   acknowledgeViaResponseUrl,
   buildAckText,
@@ -109,14 +111,30 @@ export async function POST(request: Request) {
   }
 
   const resumeStarted = Date.now();
+  // Diagnostic lookup (single read, no metadata hydration): records whether
+  // the token exists at all before attempting the resume.
+  const existing = await getHookByToken(value.toolCallId).catch(() => null);
+  console.log(
+    `${TAG} hook-lookup toolCallId=${value.toolCallId} exists=${existing !== null} runId=${existing?.runId ?? "unknown"}`,
+  );
+
   try {
-    await approvalHook.resume(value.toolCallId, {
+    // Token-based resume (no defineHook instance identity involved): the live
+    // backend resolves whichever hook holds the token. Schema validation that
+    // defineHook.resume() did automatically is done explicitly here.
+    const payload: ApprovalPayload = approvalPayloadSchema.parse({
       approved,
       comment: decidedBy,
     });
+    const resumedHook = await resumeHook(value.toolCallId, payload);
+    console.log(
+      `${TAG} hook-resumed toolCallId=${value.toolCallId} runId=${resumedHook.runId}`,
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const notFound = /not found|no hook|unknown token/i.test(message);
+    const notFound =
+      HookNotFoundError.is(error) ||
+      /not found|no hook|unknown token/i.test(message);
     // Always ack 200 so Slack doesn't show an error on the button or retry,
     // but make the outcome explicit in logs and response for debugging.
     console.warn(

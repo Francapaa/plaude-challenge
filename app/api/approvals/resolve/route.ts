@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import type { ResolveRequest } from "@/types";
-import { approvalHook } from "@/workflow/hooks/approval";
+import { getHookByToken, resumeHook } from "workflow/api";
+import { HookNotFoundError } from "workflow/errors";
+import type { ApprovalPayload, ResolveRequest } from "@/types";
+import { approvalPayloadSchema } from "@/workflow/hooks/approval";
 
 /**
  * UI fallback approval endpoint. Resolves the same workflow hook token
@@ -28,14 +30,28 @@ export async function POST(request: Request) {
     `${TAG} resolve toolCallId=${body.toolCallId} approved=${body.approved}`,
   );
 
+  // Diagnostic lookup (single read): records whether the token exists at
+  // all before attempting the resume.
+  const existing = await getHookByToken(body.toolCallId).catch(() => null);
+  console.log(
+    `${TAG} hook-lookup toolCallId=${body.toolCallId} exists=${existing !== null} runId=${existing?.runId ?? "unknown"}`,
+  );
+
   try {
-    await approvalHook.resume(body.toolCallId, {
+    // Token-based resume (no defineHook instance identity involved).
+    const payload: ApprovalPayload = approvalPayloadSchema.parse({
       approved: body.approved,
       comment: body.comment ?? "web-ui",
     });
+    const resumedHook = await resumeHook(body.toolCallId, payload);
+    console.log(
+      `${TAG} hook-resumed toolCallId=${body.toolCallId} runId=${resumedHook.runId}`,
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const notFound = /not found|no hook|unknown token/i.test(message);
+    const notFound =
+      HookNotFoundError.is(error) ||
+      /not found|no hook|unknown token/i.test(message);
     console.warn(
       `${TAG} resume toolCallId=${body.toolCallId} ` +
         `outcome=${notFound ? "hook-not-found" : "already-resolved"} error=${message}`,
