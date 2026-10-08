@@ -147,6 +147,7 @@ async function updateApprovalMessageStep(input: {
   decidedBy?: string;
 }) {
   "use step";
+  console.log("Update approval message is being executed")
   return updateApprovalMessage(input);
 }
 
