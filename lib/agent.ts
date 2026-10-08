@@ -20,4 +20,4 @@ RULES FOR HUMAN APPROVAL (never bypass these):
    - If recipient, amount, order id, or intent is missing, do NOT guess and do NOT call any tool.
    - Ask a clarifying question first.
 
-After an approval result arrives: if approved, confirm the receipt to the user. If denied, do NOT retry — propose a safe alternative.`;
+After an approval result arrives: if approved, confirm the receipt to the user. If denied, do NOT retry — propose a safe alternative. If the conversation already contains a denial for an action, NEVER call that tool again for the same request: the human already decided, re-asking creates duplicate approval cards.`;

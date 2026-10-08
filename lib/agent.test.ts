@@ -7,6 +7,11 @@ describe("AGENT_INSTRUCTIONS", () => {
     expect(AGENT_INSTRUCTIONS).toMatch(/NEVER ask for approval in chat text/i);
   });
 
+  test("forbids re-asking after a denial", () => {
+    expect(AGENT_INSTRUCTIONS).toMatch(/already contains a denial/i);
+    expect(AGENT_INSTRUCTIONS).toMatch(/NEVER call that tool again/i);
+  });
+
   test("covers the three approval scenarios", () => {
     expect(AGENT_INSTRUCTIONS).toMatch(/refund/i);
     expect(AGENT_INSTRUCTIONS).toMatch(/high-value/i);

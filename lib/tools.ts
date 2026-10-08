@@ -89,20 +89,36 @@ async function escalateForApproval(params: {
     `[hitl] decision tool=${params.toolName} toolCallId=${params.toolCallId} approved=${decision.approved} by=${decision.comment ?? "?"}`,
   );
 
-  await updateApprovalMessageStep({
-    channel: posted.channel,
-    ts: posted.ts,
-    mock: posted.mock,
-    toolName: params.toolName,
-    approved: decision.approved,
-    decidedBy: decision.comment,
-  });
+  // Marking the Slack card is cosmetic: it must never kill the run,
+  // no matter what Slack returns (wrong channel id, revoked token…).
+  console.log(
+    `[hitl] updating card tool=${params.toolName} toolCallId=${params.toolCallId} channel=${posted.channel} ts=${posted.ts} mock=${posted.mock}`,
+  );
+  try {
+    await updateApprovalMessageStep({
+      channel: posted.channel,
+      ts: posted.ts,
+      mock: posted.mock,
+      toolName: params.toolName,
+      approved: decision.approved,
+      decidedBy: decision.comment,
+    });
+  } catch (error) {
+    console.warn(
+      `[hitl] card update failed tool=${params.toolName} toolCallId=${params.toolCallId}:`,
+      error instanceof Error ? error.message : error,
+    );
+  }
 
   if (!decision.approved) {
     return {
       ok: false,
       denied: true,
-      message: `Denied by human reviewer${decision.comment ? `: ${decision.comment}` : ""}. Do not retry — propose a safe alternative.`,
+      message:
+        `FINAL DECISION — the human reviewer denied this ${params.toolName} action` +
+        `${decision.comment ? ` (${decision.comment})` : ""}. ` +
+        `Do NOT call ${params.toolName} (or any equivalent tool) again for this request in this conversation — the human already decided. ` +
+        `Reply to the user with a safe alternative instead.`,
     };
   }
 
