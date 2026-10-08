@@ -1,5 +1,11 @@
 import { describe, expect, test } from "vitest";
-import { buildAckText, buildVerdictBlocks, verifySlackSignature } from "./slack";
+import { FatalError } from "workflow";
+import {
+  buildAckText,
+  buildVerdictBlocks,
+  resolveApprovalChannel,
+  verifySlackSignature,
+} from "./slack";
 
 const SIGNING_SECRET = "test_secret";
 const TIMESTAMP = "1531420618";
@@ -81,5 +87,40 @@ describe("buildAckText", () => {
     expect(
       buildAckText({ toolName: "refundPayment", approved: false }),
     ).toContain("Deny");
+  });
+});
+
+describe("resolveApprovalChannel", () => {
+  const KEY = "SLACK_APPROVAL_CHANNEL";
+  const prev = process.env[KEY];
+
+  const set = (value: string | undefined) => {
+    if (value === undefined) delete process.env[KEY];
+    else process.env[KEY] = value;
+  };
+
+  test("restores env after tests", () => {
+    set(prev);
+    expect(process.env[KEY]).toBe(prev);
+  });
+
+  test("accepts a channel ID", () => {
+    set("C0C8A9ARREU");
+    expect(resolveApprovalChannel()).toBe("C0C8A9ARREU");
+    set(prev);
+  });
+
+  test("falls back when unset", () => {
+    set(undefined);
+    expect(resolveApprovalChannel()).toBe("#approvals");
+    set(prev);
+  });
+
+  test("rejects channel names, quotes and padding", () => {
+    for (const bad of ["#approvals", '"C0C8A9ARREU"', "C0C8A9ARREU ", " C0C8A9ARREU"]) {
+      set(bad);
+      expect(() => resolveApprovalChannel()).toThrow(FatalError);
+    }
+    set(prev);
   });
 });
