@@ -83,7 +83,22 @@ async function escalateForApproval(params: {
   console.log(
     `[hitl] awaiting approval tool=${params.toolName} toolCallId=${params.toolCallId}`,
   );
-  const hook = approvalHook.create({ token: params.toolCallId });
+  // Logged AFTER create succeeds on purpose: if create throws (wrong
+  // context) or never registers, hook-created is absent and the resume side
+  // will report hook-not-found — this pair is what tells them apart.
+  let hook: ReturnType<typeof approvalHook.create>;
+  try {
+    hook = approvalHook.create({ token: params.toolCallId });
+  } catch (error) {
+    console.error(
+      `[hitl] hook-create failed tool=${params.toolName} toolCallId=${params.toolCallId}:`,
+      error instanceof Error ? error.message : error,
+    );
+    throw error;
+  }
+  console.log(
+    `[hitl] hook-created tool=${params.toolName} toolCallId=${params.toolCallId}`,
+  );
   const decision = await hook;
   console.log(
     `[hitl] decision tool=${params.toolName} toolCallId=${params.toolCallId} approved=${decision.approved} by=${decision.comment ?? "?"}`,
