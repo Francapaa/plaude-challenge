@@ -64,7 +64,11 @@ export async function postApprovalMessage(params: {
     ],
   });
 
-  return { channel, ts: res.ts ?? "", mock: false };
+  const posted = { channel, ts: res.ts ?? "", mock: false };
+  console.log(
+    `[slack] posted tool=${params.toolName} channel=${posted.channel} ts=${posted.ts}`,
+  );
+  return posted;
 }
 
 /** Edits the approval card in place once a human has decided. */

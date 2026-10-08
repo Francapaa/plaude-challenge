@@ -2,6 +2,7 @@ import { WorkflowAgent, type ModelCallStreamPart } from "@ai-sdk/workflow";
 import { convertToModelMessages, isStepCount, tool, type UIMessage } from "ai";
 import { getWritable } from "workflow";
 import { AGENT_INSTRUCTIONS, MODEL_ID } from "@/lib/agent";
+import { shouldForbidTools } from "@/lib/loop-guard";
 import {
   executeRefundRequest,
   executeTransferRequest,
@@ -17,6 +18,11 @@ export async function chat(messages: UIMessage[]) {
   const agent = new WorkflowAgent({
     model: MODEL_ID,
     instructions: AGENT_INSTRUCTIONS,
+    // Hard guard against retry loops: once any tool result in this run is
+    // a human denial, forbid further tool calls so the model must answer
+    // with text (a safe alternative) instead of re-requesting approval.
+    prepareStep: ({ steps }) =>
+      shouldForbidTools(steps) ? { toolChoice: "none" as const } : {},
     tools: {
       // Note: no `needsApproval` here. Each executor escalates to a human
       // itself: it posts the Slack card and suspends on the approval hook
