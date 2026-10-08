@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import type { SlackActionValue } from "@/types";
 import { approvalHook } from "@/workflow/hooks/approval";
-import { verifySlackSignature } from "@/lib/slack";
+import {
+  acknowledgeViaResponseUrl,
+  buildAckText,
+  verifySlackSignature,
+} from "@/lib/slack";
 
 const TAG = "[slack:hitl]";
 
@@ -50,6 +54,7 @@ export async function POST(request: Request) {
 
   let payload: {
     type?: string;
+    response_url?: string;
     user?: { username?: string; id?: string };
     actions?: Array<{ action_id?: string; value?: string }>;
   };
@@ -80,10 +85,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "missing toolCallId" }, { status: 400 });
   }
 
+  const toolName = value.toolName ?? "action";
   const decidedBy = payload.user?.username ?? payload.user?.id ?? "slack-user";
   console.log(
-    `${TAG} action=${action?.action_id} toolCallId=${value.toolCallId} user=${decidedBy}`,
+    `${TAG} action=${action?.action_id} tool=${toolName} toolCallId=${value.toolCallId} user=${decidedBy}`,
   );
+
+  // Instant ephemeral feedback to the clicker. Never touches the shared
+  // card, so duplicates can't corrupt the final verdict. Best-effort: a
+  // failed ack must not block the resume.
+  if (payload.response_url) {
+    try {
+      await acknowledgeViaResponseUrl(
+        payload.response_url,
+        buildAckText({ toolName, approved }),
+      );
+    } catch (error) {
+      console.warn(
+        `${TAG} ack failed toolCallId=${value.toolCallId}:`,
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
 
   const resumeStarted = Date.now();
   try {

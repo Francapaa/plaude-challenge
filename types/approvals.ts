@@ -14,6 +14,7 @@ export interface ApprovalMessage {
 /** Button value embedded in Slack Approve/Deny buttons. */
 export interface SlackActionValue {
   toolCallId: string;
+  toolName?: string;
 }
 
 /** Body accepted by POST /api/approvals/resolve. */

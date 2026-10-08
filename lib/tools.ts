@@ -95,14 +95,15 @@ async function escalateForApproval(params: {
     `[hitl] updating card tool=${params.toolName} toolCallId=${params.toolCallId} channel=${posted.channel} ts=${posted.ts} mock=${posted.mock}`,
   );
   try {
-    await updateApprovalMessageStep({
-      channel: posted.channel,
-      ts: posted.ts,
-      mock: posted.mock,
-      toolName: params.toolName,
-      approved: decision.approved,
-      decidedBy: decision.comment,
-    });
+  await updateApprovalMessageStep({
+    channel: posted.channel,
+    ts: posted.ts,
+    mock: posted.mock,
+    toolName: params.toolName,
+    summary: params.summary,
+    approved: decision.approved,
+    decidedBy: decision.comment,
+  });
   } catch (error) {
     console.warn(
       `[hitl] card update failed tool=${params.toolName} toolCallId=${params.toolCallId}:`,
@@ -141,6 +142,7 @@ async function updateApprovalMessageStep(input: {
   ts: string;
   mock: boolean;
   toolName: string;
+  summary: string;
   approved: boolean;
   decidedBy?: string;
 }) {

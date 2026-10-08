@@ -15,3 +15,10 @@ export type {
   ResolveRequest,
   SlackActionValue,
 } from "./approvals";
+export type {
+  SlackCardBlocks,
+  SlackContextBlock,
+  SlackMrkdwn,
+  SlackSectionBlock,
+  VerdictInput,
+} from "./slack";

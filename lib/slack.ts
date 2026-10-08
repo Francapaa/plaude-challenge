@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { WebClient } from "@slack/web-api";
-import type { ApprovalMessage } from "@/types";
+import type { ApprovalMessage, SlackCardBlocks, VerdictInput } from "@/types";
 
 function getClient(): WebClient | null {
   const token = process.env.SLACK_BOT_TOKEN;
@@ -50,14 +50,20 @@ export async function postApprovalMessage(params: {
             text: { type: "plain_text", text: "Approve" },
             style: "primary",
             action_id: "approve_tool",
-            value: JSON.stringify({ toolCallId: params.toolCallId }),
+            value: JSON.stringify({
+              toolCallId: params.toolCallId,
+              toolName: params.toolName,
+            }),
           },
           {
             type: "button",
             text: { type: "plain_text", text: "Deny" },
             style: "danger",
             action_id: "deny_tool",
-            value: JSON.stringify({ toolCallId: params.toolCallId }),
+            value: JSON.stringify({
+              toolCallId: params.toolCallId,
+              toolName: params.toolName,
+            }),
           },
         ],
       },
@@ -72,11 +78,44 @@ export async function postApprovalMessage(params: {
 }
 
 /** Edits the approval card in place once a human has decided. */
+/** Final card: verdict + who/when + original summary, no action buttons. */
+export function buildVerdictBlocks(input: VerdictInput): SlackCardBlocks {
+  const icon = input.approved ? "✅" : "❌";
+  const verdict = input.approved ? "Approved" : "Denied";
+  return [
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `${icon} *${verdict} — ${input.toolName}*\n${input.summary}`,
+      },
+    },
+    {
+      type: "context",
+      elements: [
+        {
+          type: "mrkdwn",
+          text: `Decided by ${input.decidedBy} · ${input.decidedAt}`,
+        },
+      ],
+    },
+  ];
+}
+
+/** Ephemeral ack shown only to the clicker while the decision processes. */
+export function buildAckText(input: {
+  toolName: string;
+  approved: boolean;
+}): string {
+  return `Got it — your "${input.approved ? "Approve" : "Deny"}" for ${input.toolName} is being processed…`;
+}
+
 export async function updateApprovalMessage(params: {
   channel: string;
   ts: string;
   mock: boolean;
   toolName: string;
+  summary: string;
   approved: boolean;
   decidedBy?: string;
 }): Promise<{ updated: boolean }> {
@@ -94,14 +133,31 @@ export async function updateApprovalMessage(params: {
     channel: params.channel,
     ts: params.ts,
     text,
-    blocks: [
-      {
-        type: "section",
-        text: { type: "mrkdwn", text },
-      },
-    ],
+    blocks: buildVerdictBlocks({
+      toolName: params.toolName,
+      summary: params.summary,
+      approved: params.approved,
+      decidedBy: params.decidedBy ?? "unknown",
+      decidedAt: new Date().toISOString(),
+    }) as never,
   });
   return { updated: true };
+}
+
+/**
+ * Sends an ephemeral acknowledgement visible only to the person who
+ * clicked. Never touches the shared card, so a late/duplicate click can
+ * never corrupt the final verdict.
+ */
+export async function acknowledgeViaResponseUrl(
+  responseUrl: string,
+  text: string,
+): Promise<void> {
+  await fetch(responseUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ response_type: "ephemeral", text }),
+  });
 }
 
 /**
