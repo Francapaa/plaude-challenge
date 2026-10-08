@@ -14,7 +14,7 @@ export async function chat(messages: UIMessage[]) {
   "use workflow";
 
   const modelMessages = await convertToModelMessages(messages);
-
+  console.log("hola")
   const agent = new WorkflowAgent({
     model: MODEL_ID,
     instructions: AGENT_INSTRUCTIONS,
