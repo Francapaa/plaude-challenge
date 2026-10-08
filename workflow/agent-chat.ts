@@ -24,13 +24,13 @@ export async function chat(messages: UIMessage[]) {
       // the same token.
       refundPayment: tool({
         description:
-          "Refund a customer order. Small, recent, clear refunds execute immediately; anything else pauses for human approval in Slack.",
+          "Request or execute a customer order refund. Calling this tool does NOT charge or refund anything by itself: small, recent, clear refunds execute immediately, anything else automatically pauses for human approval in Slack. To request approval you MUST call this tool — never ask in chat text.",
         inputSchema: refundSchema,
         execute: executeRefundRequest,
       }),
       highValueTransfer: tool({
         description:
-          "Send a payment or transfer. Always pauses for human approval in Slack before executing.",
+          "Request a payment or transfer. Calling this tool does NOT move money by itself: it always pauses for human approval in Slack before executing. To request approval you MUST call this tool — never ask in chat text.",
         inputSchema: transferSchema,
         execute: executeTransferRequest,
       }),
