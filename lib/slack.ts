@@ -1,6 +1,36 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { WebClient } from "@slack/web-api";
+import { FatalError } from "workflow";
 import type { ApprovalMessage, SlackCardBlocks, VerdictInput } from "@/types";
+
+const CHANNEL_ID_PATTERN = /^C[A-Z0-9]{8,}$/;
+
+/**
+ * Resolves the Slack approval channel from the environment, logging the
+ * exact raw value so invisible typos (quotes, spaces, trailing S) show up
+ * in logs immediately. Channel names like "#approvals" are rejected on
+ * purpose: chat.postMessage tolerates them but chat.update answers
+ * channel_not_found, which used to cost hours of debugging.
+ */
+export function resolveApprovalChannel(): string {
+  const raw = process.env.SLACK_APPROVAL_CHANNEL;
+  console.log(
+    `[slack] SLACK_APPROVAL_CHANNEL raw=${JSON.stringify(raw ?? null)}`,
+  );
+  if (raw === undefined || raw === "") {
+    console.warn(
+      '[slack] SLACK_APPROVAL_CHANNEL not set — falling back to "#approvals" (demo mode; card updates will fail)',
+    );
+    return "#approvals";
+  }
+  if (!CHANNEL_ID_PATTERN.test(raw)) {
+    throw new FatalError(
+      `SLACK_APPROVAL_CHANNEL must be a channel ID like "C012AB3CD", got ${JSON.stringify(raw)}. ` +
+        `Fix the variable in Vercel (exact name SLACK_APPROVAL_CHANNEL, no quotes/spaces) and redeploy.`,
+    );
+  }
+  return raw;
+}
 
 function getClient(): WebClient | null {
   const token = process.env.SLACK_BOT_TOKEN;
@@ -24,7 +54,7 @@ export async function postApprovalMessage(params: {
   toolName: string;
   summary: string;
 }): Promise<ApprovalMessage> {
-  const channel = process.env.SLACK_APPROVAL_CHANNEL ?? "#approvals";
+  const channel = resolveApprovalChannel();
   const client = getClient();
 
   const text = approvalText(params.toolName, params.summary);
