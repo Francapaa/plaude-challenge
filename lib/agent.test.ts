@@ -18,6 +18,12 @@ describe("AGENT_INSTRUCTIONS", () => {
     expect(AGENT_INSTRUCTIONS).toMatch(/ambiguous/i);
   });
 
+  test("restricts scope to money operations and permissions", () => {
+    expect(AGENT_INSTRUCTIONS).toMatch(/SCOPE/i);
+    expect(AGENT_INSTRUCTIONS).toMatch(/permission changes/i);
+    expect(AGENT_INSTRUCTIONS).toMatch(/do NOT call any tool/i);
+  });
+
   test("uses a cheap model by default", () => {
     expect(MODEL_ID).toBe("openai/gpt-4o-mini");
   });
