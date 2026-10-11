@@ -12,7 +12,6 @@ export type {
 export type {
   ApprovalMessage,
   ApprovalPayload,
-  ResolveRequest,
   SlackActionValue,
 } from "./approvals";
 export type {

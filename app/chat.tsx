@@ -42,7 +42,6 @@ export function Chat() {
                 return (
                   <ApprovalCard
                     key={part.toolCallId}
-                    toolCallId={part.toolCallId}
                     toolName={getToolName(part)}
                     input={part.input}
                     output={part.output}

@@ -26,8 +26,7 @@ export async function chat(messages: UIMessage[]) {
     tools: {
       // Note: no `needsApproval` here. Each executor escalates to a human
       // itself: it posts the Slack card and suspends on the approval hook
-      // (workflow-level primitive), so Slack and the UI fallback resolve
-      // the same token.
+      // (workflow-level primitive), so only Slack resolves the token.
       refundPayment: tool({
         description:
           "Request or execute a customer order refund. Calling this tool does NOT charge or refund anything by itself: small, recent, clear refunds execute immediately, anything else automatically pauses for human approval in Slack. To request approval you MUST call this tool — never ask in chat text.",

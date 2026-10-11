@@ -1,6 +1,3 @@
-"use client";
-
-import { useResolveApproval } from "@/hooks/useResolveApproval";
 import {
   isActionReceipt,
   isDeniedResult,
@@ -9,7 +6,6 @@ import {
 } from "@/lib/action-guards";
 
 interface ApprovalCardProps {
-  toolCallId: string;
   toolName: string;
   input: unknown;
   output: unknown;
@@ -31,9 +27,7 @@ function renderOutput(output: unknown): string {
   return typeof output === "string" ? output : "Done.";
 }
 
-export function ApprovalCard({ toolCallId, toolName, input, output }: ApprovalCardProps) {
-  const { resolve, submitting, sent } = useResolveApproval(toolCallId);
-
+export function ApprovalCard({ toolName, input, output }: ApprovalCardProps) {
   if (output) {
     const tone = isDeniedResult(output)
       ? "border-red-200 bg-red-50 text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100"
@@ -56,30 +50,9 @@ export function ApprovalCard({ toolCallId, toolName, input, output }: ApprovalCa
           {toolName} {renderInput(input)}
         </span>
       </p>
-      {sent === null ? (
-        <div className="flex gap-2">
-          <button
-            type="button"
-            disabled={submitting}
-            onClick={() => void resolve(true)}
-            className="rounded bg-green-600 px-3 py-1 text-white disabled:opacity-50"
-          >
-            {submitting ? "…" : "Approve here"}
-          </button>
-          <button
-            type="button"
-            disabled={submitting}
-            onClick={() => void resolve(false)}
-            className="rounded bg-red-600 px-3 py-1 text-white disabled:opacity-50"
-          >
-            {submitting ? "…" : "Deny here"}
-          </button>
-        </div>
-      ) : (
-        <p className="text-zinc-600 dark:text-amber-200/70">
-          Decision sent from here ({sent ? "approved" : "denied"}) — the agent will continue shortly.
-        </p>
-      )}
+      <p className="text-zinc-600 dark:text-amber-200/70">
+        Approve or deny from Slack — the agent will continue shortly.
+      </p>
     </div>
   );
 }
