@@ -9,8 +9,8 @@ export const approvalPayloadSchema = z.object({
 
 /**
  * Typed human-in-the-loop hook. Tools create an instance per tool call
- * using the toolCallId as the token, so both Slack buttons and the UI
- * fallback resolve the same suspension via `approvalHook.resume(token, …)`.
+ * using the toolCallId as the token, so only Slack buttons resolve the
+ * suspension via `resumeHook(token, …)`.
  */
 export const approvalHook = defineHook<ApprovalPayload>({
   schema: approvalPayloadSchema,

@@ -79,7 +79,7 @@ async function escalateForApproval(params: {
   });
 
   // Workflow pauses here — no compute consumed — until a human resolves
-  // the same token from Slack or from the UI fallback.
+  // the same token from Slack.
   console.log(
     `[hitl] awaiting approval tool=${params.toolName} toolCallId=${params.toolCallId}`,
   );

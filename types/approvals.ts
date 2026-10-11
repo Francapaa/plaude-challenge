@@ -16,10 +16,3 @@ export interface SlackActionValue {
   toolCallId: string;
   toolName?: string;
 }
-
-/** Body accepted by POST /api/approvals/resolve. */
-export interface ResolveRequest {
-  toolCallId: string;
-  approved: boolean;
-  comment?: string;
-}
