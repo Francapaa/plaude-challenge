@@ -1,8 +1,3 @@
-/**
- * Pure approval policy mirroring lib/agent.ts plain-text rules.
- * Kept side-effect free so it is unit-testable and reusable from
- * `needsApproval` callbacks and Slack message builders.
- */
 
 import type { ActionInput } from "@/types";
 
@@ -26,6 +21,5 @@ export function requiresHumanApproval(action: ActionInput): boolean {
     return false;
   }
 
-  // Generic actions default to approval (safe default for the demo).
   return true;
 }

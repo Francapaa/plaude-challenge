@@ -24,7 +24,6 @@ export const transferSchema = z.object({
   memo: z.string().optional(),
 }) satisfies z.ZodType<TransferInput>;
 
-/** Durable step: simulated refund payout (no real money moves in the demo). */
 export async function finalizeRefundStep(
   input: RefundInput,
 ): Promise<RefundReceipt> {
@@ -37,7 +36,6 @@ export async function finalizeRefundStep(
   };
 }
 
-/** Durable step: simulated transfer (no real money moves in the demo). */
 export async function finalizeTransferStep(
   input: TransferInput,
 ): Promise<TransferReceipt> {
@@ -59,13 +57,7 @@ function transferSummary(input: TransferInput): string {
   return `Transfer $${input.amountUSD} to ${input.recipient}${input.memo ? ` — memo: ${input.memo}` : ""}`;
 }
 
-/**
- * Shared escalation flow: post the Slack card, suspend on the hook,
- * then finalize or deny. Runs at workflow level (no "use step" here —
- * hooks are workflow-level primitives). Slack posts and payouts are
- * isolated in "use step" functions so replays never double-post or
- * double-execute.
- */
+
 async function escalateForApproval(params: {
   toolCallId: string;
   toolName: string;
@@ -78,14 +70,10 @@ async function escalateForApproval(params: {
     summary: params.summary,
   });
 
-  // Workflow pauses here — no compute consumed — until a human resolves
-  // the same token from Slack.
   console.log(
     `[hitl] awaiting approval tool=${params.toolName} toolCallId=${params.toolCallId}`,
   );
-  // Logged AFTER create succeeds on purpose: if create throws (wrong
-  // context) or never registers, hook-created is absent and the resume side
-  // will report hook-not-found — this pair is what tells them apart.
+
   let hook: ReturnType<typeof approvalHook.create>;
   try {
     hook = approvalHook.create({ token: params.toolCallId });
@@ -103,9 +91,7 @@ async function escalateForApproval(params: {
   console.log(
     `[hitl] decision tool=${params.toolName} toolCallId=${params.toolCallId} approved=${decision.approved} by=${decision.comment ?? "?"}`,
   );
-
-  // Marking the Slack card is cosmetic: it must never kill the run,
-  // no matter what Slack returns (wrong channel id, revoked token…).
+  
   console.log(
     `[hitl] updating card tool=${params.toolName} toolCallId=${params.toolCallId} channel=${posted.channel} ts=${posted.ts} mock=${posted.mock}`,
   );
