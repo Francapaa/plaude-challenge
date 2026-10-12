@@ -6,7 +6,7 @@ AI agent powered by plain-text instructions with a Slack human-in-the-loop workf
 
 ## Stack
 
-- Next.js (App Router) + TypeScript
+- Next.js (Chat) + TypeScript
 - Workflow DevKit (`workflow@5`) + `WorkflowAgent` (`@ai-sdk/workflow`, successor of the deprecated `DurableAgent`)
 - Vercel AI Gateway for models
 - Slack Web API (outgoing: we post Block Kit Approve/Deny cards via `chat.postMessage` / `chat.update`)
