@@ -14,19 +14,12 @@ export async function chat(messages: UIMessage[]) {
   "use workflow";
 
   const modelMessages = await convertToModelMessages(messages);
-  console.log("hola")
   const agent = new WorkflowAgent({
     model: MODEL_ID,
     instructions: AGENT_INSTRUCTIONS,
-    // Hard guard against retry loops: once any tool result in this run is
-    // a human denial, forbid further tool calls so the model must answer
-    // with text (a safe alternative) instead of re-requesting approval.
     prepareStep: ({ steps }) =>
       shouldForbidTools(steps) ? { toolChoice: "none" as const } : {},
     tools: {
-      // Note: no `needsApproval` here. Each executor escalates to a human
-      // itself: it posts the Slack card and suspends on the approval hook
-      // (workflow-level primitive), so only Slack resolves the token.
       refundPayment: tool({
         description:
           "Request or execute a customer order refund. Calling this tool does NOT charge or refund anything by itself: small, recent, clear refunds execute immediately, anything else automatically pauses for human approval in Slack. To request approval you MUST call this tool — never ask in chat text.",
