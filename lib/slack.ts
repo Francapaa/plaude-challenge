@@ -42,13 +42,6 @@ function approvalText(toolName: string, summary: string): string {
   return `Approval needed for *${toolName}*: ${summary}`;
 }
 
-/**
- * Posts a human-in-the-loop approval request to Slack with Approve/Deny
- * buttons. The button value carries the toolCallId, which is also the
- * workflow hook token — so the interactivity webhook can resume the exact
- * suspended tool call. Falls back to a logged mock when no bot token is
- * configured so the demo works without a workspace.
- */
 export async function postApprovalMessage(params: {
   toolCallId: string;
   toolName: string;
@@ -63,7 +56,7 @@ export async function postApprovalMessage(params: {
     console.log(`[slack:mock] ${text} (toolCallId=${params.toolCallId})`);
     return { channel, ts: `mock_${Date.now()}`, mock: true };
   }
-
+  // buttons in slack chat
   const res = await client.chat.postMessage({
     channel,
     text,
@@ -107,8 +100,7 @@ export async function postApprovalMessage(params: {
   return posted;
 }
 
-/** Edits the approval card in place once a human has decided. */
-/** Final card: verdict + who/when + original summary, no action buttons. */
+
 export function buildVerdictBlocks(input: VerdictInput): SlackCardBlocks {
   const icon = input.approved ? "✅" : "❌";
   const verdict = input.approved ? "Approved" : "Denied";
@@ -132,7 +124,7 @@ export function buildVerdictBlocks(input: VerdictInput): SlackCardBlocks {
   ];
 }
 
-/** Ephemeral ack shown only to the clicker while the decision processes. */
+//processing decision
 export function buildAckText(input: {
   toolName: string;
   approved: boolean;
@@ -190,10 +182,7 @@ export async function acknowledgeViaResponseUrl(
   });
 }
 
-/**
- * Verifies that an incoming request genuinely comes from Slack.
- * https://docs.slack.dev/authentication/verifying-requests-from-slack
- */
+
 export function verifySlackSignature(params: {
   signingSecret: string;
   timestamp: string;
